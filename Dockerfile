@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN set -eux; \
 	install-php-extensions \
+		pdo_mysql \
 		@composer \
 		apcu \
 		intl \
@@ -43,7 +44,7 @@ ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
 ###> recipes ###
 ###> doctrine/doctrine-bundle ###
-RUN install-php-extensions pdo_pgsql
+RUN install-php-extensions pdo_mysql
 ###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
@@ -55,6 +56,25 @@ ENTRYPOINT ["docker-entrypoint"]
 
 HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
+
+# Install cron package
+RUN apt-get update && apt-get install -y cron
+RUN touch /var/log/cron.log && chmod 666 /var/log/cron.log
+
+# Copy cron job file to the container
+COPY ./docker/cron/symfony-cron /etc/cron.d/symfony-cron
+
+# Set permissions for the cron job file
+RUN chmod 0644 /etc/cron.d/symfony-cron
+
+# Apply the cron job
+RUN crontab /etc/cron.d/symfony-cron
+
+# Run cron service
+RUN service cron start
+
+# Start cron in the background and then start frankenphp
+CMD cron && frankenphp run --config /etc/caddy/Caddyfile
 
 # Dev FrankenPHP image
 FROM frankenphp_base AS frankenphp_dev
