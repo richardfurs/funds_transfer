@@ -1,10 +1,3 @@
-# Symfony Docker
-
-A [Docker](https://www.docker.com/)-based installer and runtime for the [Symfony](https://symfony.com) web framework,
-with [FrankenPHP](https://frankenphp.dev) and [Caddy](https://caddyserver.com/) inside!
-
-![CI](https://github.com/dunglas/symfony-docker/workflows/CI/badge.svg)
-
 ## Getting Started
 
 1. If not already done, [install Docker Compose](https://docs.docker.com/compose/install/) (v2.10+)
@@ -13,39 +6,39 @@ with [FrankenPHP](https://frankenphp.dev) and [Caddy](https://caddyserver.com/) 
 4. Open `https://localhost` in your favorite web browser and [accept the auto-generated TLS certificate](https://stackoverflow.com/a/15076602/1352334)
 5. Run `docker compose down --remove-orphans` to stop the Docker containers.
 
-## Features
+## Set up
 
-* Production, development and CI ready
-* Just 1 service by default
-* Blazing-fast performance thanks to [the worker mode of FrankenPHP](https://github.com/dunglas/frankenphp/blob/main/docs/worker.md) (automatically enabled in prod mode)
-* [Installation of extra Docker Compose services](docs/extra-services.md) with Symfony Flex
-* Automatic HTTPS (in dev and prod)
-* HTTP/3 and [Early Hints](https://symfony.com/blog/new-in-symfony-6-3-early-hints) support
-* Real-time messaging thanks to a built-in [Mercure hub](https://symfony.com/doc/current/mercure.html)
-* [Vulcain](https://vulcain.rocks) support
-* Native [XDebug](docs/xdebug.md) integration
-* Super-readable configuration
+1. Run `docker exec -it funds_transfer-php-1 bash` to bash in container
+2. Run `composer install` to install dependencies
+3. Run `php bin/console doctrine:database:create` to create database
+4. Run `php bin/console doctrine:migrations:migrate` to migrate database
+5. Run `php bin/console doctrine:fixtures:load` to seed database
+6. Run `php bin/console app:update-rates` to create initial currency rates
+7. Run `service cron start` to start cron service
+8. Run `php bin/console doctrine:database:create --env=test` to create test database
+9. Run `php bin/console doctrine:migrations:migrate --env=test` to migrate test database
 
-**Enjoy!**
+## Tests
 
-## Docs
+1. Run `./vendor/bin/phpunit tests/Controller/ClientControllerTest.php` to test Client controller
+2. Run `./vendor/bin/phpunit tests/Controller/AccountControllerTest.php` to test Account controller
 
-1. [Options available](docs/options.md)
-2. [Using Symfony Docker with an existing project](docs/existing-project.md)
-3. [Support for extra services](docs/extra-services.md)
-4. [Deploying in production](docs/production.md)
-5. [Debugging with Xdebug](docs/xdebug.md)
-6. [TLS Certificates](docs/tls.md)
-7. [Using MySQL instead of PostgreSQL](docs/mysql.md)
-8. [Using Alpine Linux instead of Debian](docs/alpine.md)
-9. [Using a Makefile](docs/makefile.md)
-10. [Updating the template](docs/updating.md)
-11. [Troubleshooting](docs/troubleshooting.md)
+## API
 
-## License
+#### GET
 
-Symfony Docker is available under the MIT License.
+1. `localhost/clients/{id}/accounts`
+2. `localhost/accounts/{id}/transactions?offset={offset}&limit={limit}`
 
-## Credits
+#### POST
 
-Created by [Kévin Dunglas](https://dunglas.dev), co-maintained by [Maxime Helias](https://twitter.com/maxhelias) and sponsored by [Les-Tilleuls.coop](https://les-tilleuls.coop).
+`localhost/accounts/transfer`
+
+```
+{
+    'from_account_id': 1,
+    'to_account_id': 2
+    'currency': USD
+    'amount': 100
+}
+```
